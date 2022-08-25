@@ -25,14 +25,14 @@ public class UserController {
     private final UserService userService;
 
     @Tag(name = "Create")
-    @Operation(summary = "Create user in database and return him")
+    @Operation(summary = "Create user in the database and return him")
     @ApiResponse(
             responseCode = "200",
             content = @Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = @Schema(implementation = UserEntity.class)
             ),
-            description = "Create user in database and return him"
+            description = "Create user in the database and return him"
     )
     @PostMapping
     public ResponseEntity<UserEntity> register(@RequestBody UserData userData) {
