@@ -3,10 +3,15 @@ package com.winds.crud.User.service;
 import com.winds.crud.User.UserRepository;
 import com.winds.crud.User.models.UserData;
 import com.winds.crud.User.models.UserEntity;
+import com.winds.crud.exceptions.IncorrectEmailException;
+import com.winds.crud.exceptions.IncorrectPhoneNumberException;
+import com.winds.crud.exceptions.UserNotFoundInDatabaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -17,16 +22,21 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserEntity register(UserData userData) {
         if (!isPhoneGood(userData))
-            throw new RuntimeException("Phone number has incorrect format");
+            throw new IncorrectPhoneNumberException("Phone number has incorrect format");
         if (!isEmailGood(userData))
-            throw  new RuntimeException("Email has incorrect format");
+            throw  new IncorrectEmailException("Email has incorrect format");
         return userRepository.save(UserEntity.of(userData));
     }
 
     @Override
     public UserEntity get(UUID id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("File not found by id"));
+                .orElseThrow(() -> new UserNotFoundInDatabaseException("File not found by id"));
+    }
+
+    @Override
+    public List<UserEntity> getAll() {
+        return userRepository.findAll();
     }
 
     @Override
@@ -41,10 +51,10 @@ public class UserServiceImpl implements UserService {
         if (userData.getPatronymic() != null) {
             foundEntity.setPatronymic(userData.getPatronymic());
         }
-        if (userData.getPhone() != null) {
+        if (userData.getPhone() != null && isPhoneGood(userData)) {
             foundEntity.setPhone(userData.getPhone());
         }
-        if (userData.getEmail() != null) {
+        if (userData.getEmail() != null && isEmailGood(userData)) {
             foundEntity.setEmail(userData.getEmail());
         }
         return userRepository.save(foundEntity);
@@ -57,11 +67,19 @@ public class UserServiceImpl implements UserService {
         return foundUser;
     }
 
+    public static boolean patternMatches(String matcher, String regexPattern) {
+        return Pattern.compile(regexPattern)
+                .matcher(matcher)
+                .matches();
+    }
+
     private boolean isEmailGood(UserData userData) {
-        return true;
+        String emailRegex = "^.+@\\S+\\.\\S+$";
+        return patternMatches(userData.getEmail(), emailRegex);
     }
 
     private boolean isPhoneGood(UserData userData) {
-        return true;
+        String numberRegex = "^\\+\\d{11}$";
+        return patternMatches(userData.getPhone(), numberRegex);
     }
 }
